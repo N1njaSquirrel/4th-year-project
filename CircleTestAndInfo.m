@@ -8,8 +8,15 @@ function [ labelled, thickness, pointorder, partsinfo ] = CircleTestAndInfo( img
 
 %% Reduce lines as necessary and find regions.
 
-img = imread(imgname);
+img = imgeditclean(imgname);
+y = zeros(size(img));
+y(find(img==0)) = 255;
+img = y;
+
+%img = imread(imgname);
+
 [lineimg, thickness] = DetectLines(img);
+imshow(lineimg)
 test = abs(lineimg-1);
 test = test';
 [boundaries,labelled] = bwboundaries(test,'noholes');
