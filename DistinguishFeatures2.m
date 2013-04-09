@@ -1,25 +1,26 @@
 function [ analyzedpic, pointorder, partsinfo, linkedregions ] = DistinguishFeatures2( imgname )
-%DISTINGUISHFEATURES
+%DISTINGUISHFEATURES2
 %   This function brings together several other functions (and does some
-%   preprocessing so I don't have to remember) to identify regions and
-%   classify the lines as either bounding lines or individual lines.
+%   preprocessing via CircleTestAndInfo) to identify regions and
+%   classify the lines as either bounding lines or individual lines. The
+%   info returned can be interpreted as required.
 
 
 %% Preprocessing
 
 [ labelled, thickness, pointorder, partsinfo ] = CircleTestAndInfo( imgname );
-img = imread(imgname);
 
 %% Distinguish between lines and edges.
 
 classes = zeros(size(labelled));
+lowthresh = 2; %This added to get rid of teeny (single) bits of noise. DO NOT SET TOO HIGH!
 threshold = thickness;
 
 %Scan horizontally.
 for row = 1:size(labelled,1)
     lastregion = 0;
     count = 0;
-    for pixel = 2:size(img,2)
+    for pixel = 2:size(labelled,2)
         if labelled(row,pixel) ~= 0 && count == 0
             %Does this ever actually happen?
             currentregion = labelled(row,pixel);
@@ -39,8 +40,10 @@ for row = 1:size(labelled,1)
             if lastregion ~= labelled(row,pixel) %Then it's an edge!
                 val = 2;
             end
-            for i=1:count %Scan back
-                classes(row,pixel-i) = val;
+            if count >= lowthresh
+                for i=1:count %Scan back
+                    classes(row,pixel-i) = val;
+                end
             end
             count = 0;
             lastregion = currentregion;
@@ -55,10 +58,10 @@ end
 classes = classes(:,:,1)';
 labelled = labelled';
 %Scan vertically.
-for row = 1:size(img,2)
+for row = 1:size(labelled,1)
     lastregion = 0;
     count = 0;
-    for pixel = 2:size(img,1)
+    for pixel = 2:size(labelled,2)
         if labelled(row,pixel) ~= 0 && count == 0
             %Does this ever actually happen?
             currentregion = labelled(row,pixel);
@@ -78,8 +81,10 @@ for row = 1:size(img,2)
             if lastregion ~= labelled(row,pixel) %Then it's an edge!
                 val = 2;
             end
-            for i=1:count %Scan back
-                classes(row,pixel-i) = val;
+            if count >= lowthresh
+                for i=1:count %Scan back
+                    classes(row,pixel-i) = val;
+                end
             end
             count = 0;
             lastregion = currentregion;
@@ -92,6 +97,7 @@ for row = 1:size(img,2)
 end
 
 analyzedpic=classes(:,:,1)';
+%imshow(label2rgb(analyzedpic(:,:,1), @jet, [.5 .5 .5]))
 
 %% Analyze individual lines and link where necessary.
 
@@ -204,7 +210,7 @@ for line=1:size(editedlines,1)
 
 end
 
-%return %Cut out image displaying during debugging if you like.
+return %Cut out image displaying during debugging if you like.
 
 %% Clean up and display result.
 imshow(label2rgb(analyzedpic(:,:,1), @jet, [.5 .5 .5]))
