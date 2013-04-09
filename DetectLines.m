@@ -4,11 +4,14 @@ function [ analyzed, thickness ] = DetectLines( img )
 %edges or independent lines.
 %   NOTES! The input here is as it was when it was loaded.
 
-img = rgb2gray(img);
-img = imcomplement(img);
+%img = rgb2gray(img);
+
+
+%img = imcomplement(img);
+img = uint8(img);
 thickness = FindLineThickness(img);
 %template = ones(thickness); %HANG ON. Shoudn't this be gaussian!?
-template = fspecial('gaussian',thickness);
+template = fspecial('gaussian',round(thickness*1.5));
 
 filtered = imfilter(img, template);
 
